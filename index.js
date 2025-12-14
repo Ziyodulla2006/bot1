@@ -198,25 +198,22 @@ bot.onText(/\/info/, (msg) => {
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
+    const userId = msg.from?.id;
     
-    // Komandalarni o'tkazib yuborish
-    if (!text || text.startsWith('/')) {
-        return;
-    }
+    // 1. Faqat haqiqiy foydalanuvchi xabarlarini qayta ishlash
+    if (!userId || !text || text.trim() === '') return;
+    if (text.startsWith('/')) return;
+    if (msg.from?.is_bot) return;
     
     try {
         // "Yozmoqda..." statusi
         await bot.sendChatAction(chatId, 'typing');
         
-        // Sessiyani yangilash
-        const session = getSession(chatId);
-        session.lastActivity = Date.now();
-        
         // Google AI ga so'rov
         console.log(`[${chatId}] So'rov: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
         
         const chat = model.startChat({
-            history: session.history,
+            history: getSession(chatId).history || [],
             generationConfig: {
                 maxOutputTokens: 1500,
                 temperature: 0.7,
@@ -226,78 +223,74 @@ bot.on('message', async (msg) => {
         const result = await chat.sendMessage(text);
         let response = result.response.text();
         
-        // Sessiya tarixini yangilash
-        session.history.push({
-            role: "user",
-            parts: [{ text: text }]
-        });
-        session.history.push({
-            role: "model",
-            parts: [{ text: response }]
-        });
+        // ========== ✅ TO'G'RILANGAN QISMI ==========
         
-        // Tarixni cheklash (oxirgi 4 ta xabar)
-        if (session.history.length > 4) {
-            session.history = session.history.slice(-4);
+        // 1. AI ning uzun tanishtirishini qisqartirish
+        if (response.includes("Men ko'p narsalarni qila olaman") || 
+            response.includes("Matn yaratish:") || 
+            response.length > 1000 && response.includes("Men")) {
+            
+            // Faqat birinchi 2 qatorni saqlash
+            const lines = response.split('\n').filter(line => line.trim() !== '');
+            if (lines.length > 3) {
+                response = lines.slice(0, 2).join('\n') + '\n\n🤖 Davomini so\'rang!';
+            }
         }
         
-        // Javobni tozalash va yuborish
-        response = cleanText(response);
+        // 2. Citation larni olib tashlash
+        response = response.replace(/\[citation:\d+\]/g, '');
         
-        // Uzoq javoblarni bo'laklarga ajratish
-        if (response.length > 3000) {
-            const parts = [];
-            let current = response;
-            
-            while (current.length > 3000) {
-                // So'nggi bo'sh joy yoki nuqtada bo'lish
-                let splitIndex = current.lastIndexOf('\n\n', 3000);
-                if (splitIndex === -1) splitIndex = current.lastIndexOf('. ', 3000);
-                if (splitIndex === -1) splitIndex = current.lastIndexOf(' ', 3000);
-                if (splitIndex === -1) splitIndex = 3000;
-                
-                parts.push(current.substring(0, splitIndex + 1));
-                current = current.substring(splitIndex + 1);
-            }
-            
-            if (current.trim()) {
-                parts.push(current.trim());
-            }
-            
-            // Har bir bo'lakni yuborish
-            for (let i = 0; i < parts.length; i++) {
-                await bot.sendMessage(chatId, `${parts[i]}\n\n(${i + 1}/${parts.length})`);
-                if (i < parts.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-        } else {
-            // Oddiy javobni yuborish
-            await bot.sendMessage(chatId, response);
+        // 3. Formatlash belgilarini escape qilish
+        const escapeChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+        escapeChars.forEach(char => {
+            response = response.split(char).join('\\' + char);
+        });
+        
+        // 4. Ortiqcha backslash larni olib tashlash
+        response = response.replace(/\\\\/g, '\\');
+        
+        // 5. Uzunlik chegarasi
+        const MAX_LENGTH = 4000;
+        if (response.length > MAX_LENGTH) {
+            response = response.substring(0, MAX_LENGTH - 100) + '\n\n... (javob juda uzun)';
         }
         
+        // ========== SHU YERGACHA ==========
+        
+        // Sessiya tarixini yangilash (agar kerak bo'lsa)
+        const session = getSession(chatId);
+        session.lastActivity = Date.now();
+        if (session.history) {
+            session.history.push({ role: "user", parts: [{ text: text }] });
+            session.history.push({ role: "model", parts: [{ text: response }] });
+            
+            if (session.history.length > 6) {
+                session.history = session.history.slice(-6);
+            }
+        }
+        
+        // Javobni yuborish
+        await bot.sendMessage(chatId, response);
         console.log(`[${chatId}] Javob yuborildi (${response.length} belgi)`);
         
     } catch (error) {
         console.error(`[${chatId}] Xato:`, error.message);
         
-        let errorMessage = '❌ Kechirasiz, xatolik yuz berdi!\n\n';
+        let errorMessage;
         
         if (error.message.includes('API key') || error.message.includes('quota')) {
-            errorMessage += 'Sabab: API kaliti yoki limit bilan muammo.\n';
-            errorMessage += 'Yechim: Google AI Studio dan yangi kalit oling.';
+            errorMessage = '❌ Google AI kaliti yoki limit muammosi.\nYangi kalit oling.';
         } else if (error.message.includes('safety')) {
-            errorMessage += 'Sabab: Soʻrov xavfsizlik siyosatiga zid.\n';
-            errorMessage += 'Yechim: Soʻrovni boshqa shaklda yozing.';
+            errorMessage = '⚠️ So\'rov xavfsizlik siyosatiga zid.\nBoshqa shaklda so\'rang.';
+        } else if (error.message.includes('404') || error.message.includes('model')) {
+            errorMessage = '🤖 AI modeli topilmadi.\n/model gemini-1.5-flash ga o\'zgartirildi.';
         } else {
-            errorMessage += 'Sabab: Ichki server xatosi.\n';
-            errorMessage += 'Yechim: /clear bilan chatni tozalang va qayta urinib koʻring.';
+            errorMessage = '❌ Texnik xatolik.\n/clear bilan yangilang.';
         }
         
         bot.sendMessage(chatId, errorMessage);
     }
 });
-
 // ==================== BOSHQA XABAR TURLARI ====================
 
 bot.on(['sticker', 'photo', 'voice', 'video', 'document'], (msg) => {
