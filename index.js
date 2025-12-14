@@ -279,7 +279,7 @@ bot.on('message', async (msg) => {
         let errorMessage;
         
         if (error.message.includes('API key') || error.message.includes('quota')) {
-            errorMessage = '❌ Google AI kaliti yoki limit muammosi.\nYangi kalit oling.';
+            errorMessage = '❌ Bot vaqtinchalik ishlamayapti, keltirilgan noqulayliklar uchun uzur!';
         } else if (error.message.includes('safety')) {
             errorMessage = '⚠️ So\'rov xavfsizlik siyosatiga zid.\nBoshqa shaklda so\'rang.';
         } else if (error.message.includes('404') || error.message.includes('model')) {
