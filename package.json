@@ -1,14 +1,23 @@
 {
-  "name": "telegram-ai-bot",
+  "name": "telegram-groq-bot",
   "version": "1.0.0",
+  "description": "Groq AI bilan ishlaydigan Telegram bot",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "keywords": ["telegram", "bot", "ai", "groq", "chatbot"],
+  "author": "zyobe",
+  "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.22.1",
-    "node-telegram-bot-api": "^0.61.0"
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "groq-sdk": "^0.3.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
