@@ -145,7 +145,7 @@ bot.onText(/\/start/, (msg) => {
     const firstName = msg.from?.first_name || 'Foydalanuvchi';
     
     const message = `Assalomu alaykum, ${firstName}!\n\n` +
-                   `🤖 Men Google Gemini AI yordamida ishlaydigan yordamchi botman.\n\n` +
+                   `🤖 Men AI yordamida ishlaydigan yordamchi botman.\n\n` +
                    `Menga istalgan savolingizni yozing:\n` +
                    `• Dasturlash haqida\n` +
                    `• Matematika\n` +
@@ -186,8 +186,8 @@ bot.onText(/\/clear/, (msg) => {
 bot.onText(/\/info/, (msg) => {
     const chatId = msg.chat.id;
     const message = `🤖 BOT HAQIDA\n\n` +
-                   `Platforma: Google Gemini AI\n` +
-                   `Model: Gemini 1.5 Flash\n` +
+                //    `Platforma: Google Gemini AI\n` +
+                //    `Model: Gemini 1.5 Flash\n` +
                    `Foydalanuvchilar: ${userSessions.size}\n` +
                    `Holat: Faol ✅\n\n` +
                    `Bot @zyobe tomonidan yaratilgan`;
