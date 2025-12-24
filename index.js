@@ -179,7 +179,7 @@ bot.onText(/\/start/, (msg) => {
     session.messageCount++;
     
     const message = `Assalomu alaykum, ${firstName}!\n\n` +
-                   `🤖 Men Groq AI yordamida ishlaydigan yordamchi botman.\n\n` +
+                   `🤖 Men AI yordamida ishlaydigan yordamchi botman.\n\n` +
                    `Menga istalgan savolingizni yozing:\n` +
                    `• Dasturlash haqida\n` +
                    `• Matematika\n` +
@@ -200,7 +200,7 @@ bot.onText(/\/help/, (msg) => {
     const message = `🆘 YORDAM\n\n` +
                    `Botdan foydalanish juda oddiy:\n` +
                    `1. Menga savol yozing\n` +
-                   `2. Men Groq AI yordamida javob beraman\n` +
+                   `2. Men AI yordamida javob beraman\n` +
                    `3. Suhbatni davom ettiring\n\n` +
                    `⚠️ Eslatma:\n` +
                    `• Savollaringiz aniq bo'lsin\n` +
@@ -221,11 +221,11 @@ bot.onText(/\/clear/, (msg) => {
 bot.onText(/\/info/, (msg) => {
     const chatId = msg.chat.id;
     const message = `🤖 BOT HAQIDA\n\n` +
-                   `Platforma: Groq AI\n` +
-                   `Model: ${model}\n` +
+                //    `Platforma: Groq AI\n` +
+                //    `Model: ${model}\n` +
                    `Foydalanuvchilar: ${userSessions.size}\n` +
                    `Holat: Faol ✅\n\n` +
-                   `📍 Host: Render.com\n` +
+                //    `📍 Host: Render.com\n` +
                    `⏰ Uptime: ${Math.floor(process.uptime())} soniya\n\n` +
                    `Bot @zyobe tomonidan yaratilgan`;
     
